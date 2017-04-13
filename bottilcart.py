@@ -6,7 +6,7 @@ import re
 ming= "https://yeezysupply.com/cart/add.js"
 ing0 = "https://yeezysupply.com/"
 ing1= "https://yeezysupply.com/collections/"
-mix1 = ing1 + ing2
+
 def secondtest3b(url, tags):
           r = requests.get(url)
           s = soup(r.content)
@@ -21,6 +21,7 @@ def test5(url, tags):
          return souping.find_all(tags)
 
 ing2 = secondtest3b("http://yeezysupply.com","script")
+mix1 = ing1 + ing2
 ing3 =str(test5(mix1, "a"))
 mix2= (re.findall(r'/products/[a-z0-9]*',ing3))
 fmix2 = mix2[0]
