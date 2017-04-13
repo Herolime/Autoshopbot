@@ -42,7 +42,7 @@ def secondtest4(item):
 
 ing4 = secondtest3d1(truemix2, "script")
 ing5 = (re.findall(r'id:/s*/d{11}', ing4))
-mix3 = secondtest4(ing4)
+mix3 = secondtest4(item)
 fmix3 = mix3[:11]
 payload = {"quantity": "1", "id": fmix3}
 pming = requests.post(ming, json =payload)
