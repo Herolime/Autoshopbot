@@ -47,6 +47,7 @@ mix3 = secondtest4()
 fmix3 = mix3[:11]
 payload = {"quantity": "1", "id": fmix3}
 pming = requests.post(ming, json =payload)
+print (pming.content)
 
 
 
