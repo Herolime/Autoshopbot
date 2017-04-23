@@ -41,5 +41,13 @@ ing4 = getID(truemix2, "script")
 mix3= getcart()
 fmix3= mix3[:11]
 payload = {"quantity": "1", "id": fmix3}
-pming = requests.post(ming, json=payload)
-print(pming.text)
+ses= requests.Session()
+ses.post(ming, json =payload)
+ing5 = "https://yeezysupply.com/cart/"
+ses.get(ing5, params={"addProduct": "true"}, allow_redirects= True)
+ing6 = ses.post(ing5, json= {"updates[]": "1", "checkout": "CHECK+OUT"}, allow_redirects= False)
+mix4= ing6.content
+ing7 = soup(mix4, 'html.parser')
+mix5 = str(souping.find_all("a"))
+mix6 = re.split(r' " ', mix5)
+ing8 = ses.get(mix6[1])
