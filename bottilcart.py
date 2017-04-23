@@ -48,6 +48,6 @@ ses.get(ing5, params={"addProduct": "true"}, allow_redirects= True)
 ing6 = ses.post(ing5, json= {"updates[]": "1", "checkout": "CHECK+OUT"}, allow_redirects= False)
 mix4= ing6.content
 ing7 = soup(mix4, 'html.parser')
-mix5 = str(souping.find_all("a"))
-mix6 = re.split(r' " ', mix5)
+mix5 = str(ing7.find_all("a"))
+mix6 = re.split(r'"*', mix5)
 ing8 = ses.get(mix6[1])
