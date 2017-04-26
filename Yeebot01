@@ -1,0 +1,74 @@
+import requests
+from bs4 import BeautifulSoup as soup
+import re
+#Getting the item
+def soupmaker(url, tags):
+    r= requests.get(url)
+    s= soup(r.content, 'html.parser')
+    t= str(s.find_all(tags))
+    return t
+	
+def soupmakerlite(ing, tags):
+    s= soup(ing.content, 'html.parser')
+    t= str(s.find_all(tags))
+    return t
+
+def regexfinder(parameter, string):
+    search= (re.findall('%s' %(parameter), string))
+    return search
+
+def soupfinder(url, tags, parameter):
+   s= soupmaker(url, tags)
+   bla= regexfinder(parameter, s)
+   return bla
+	 
+def ALTsoupfinder(ing):
+   s= soupmakerlite(ing, "input")
+   bla= (regexfinder('value="\S{60,}"', s))
+   splitup= re.split('"', bla[2])
+   return splitup[1]
+
+ses= requests.Session()
+gotocheckout = {"quantity": "1", "id": None}
+testingdictionary= {'checkout[shipping_address][phone]': '646-667-6061', 'checkout[shipping_address][province]': 'New+York', 'checkout[shipping_address][first_name]': 'Kelli', 'checkout[shipping_address][last_name]': 'Fultz', 'utf8': '%E2%9C%93', 'authenticity_token': '', 'checkout[shipping_address][zip]': '10013', 'checkout[shipping_address][city]': 'New+York', "'checkout[shipping_address][province]": 'New+York', 'checkout[shipping_address][country]': 'United+States', 'checkout[email]': 'Kelli@outlook.com', 'checkout[remember_me]': '0', 'step': 'contact_information', 'previous_step': 'contact_information', 'checkout[shipping_address][address1]': '2666+Cantebury+Drive', 'checkout[shipping_address][address2]': '', '_method': 'patch', 'button': ''}
+confirmingdictionary= {"utf8": testingdictionary["utf8"], "_method": "patch", "authenticity_token": "", "previous_step": "shipping_method", "step": "payment_method", "checkout[shipping_rate][id]":"shopify-STANDARD%20SHIPPING-20.00","button": ""}
+thelastdict= {"utf8": testingdictionary["utf8"], "_method": "patch", "authenticity_token": "", "previous_step": "payment_method", "step": "", "checkout[payment_gateway]" :"","button": "", "checkout[different_billing_address]": "false", "checkout[buyer_accepts_marketing]":["0", "1"], "complete": "1","s": ""}
+creditinfo= {'year': 2018, 'number': '5105 1051 0510 5100', 'name': 'John Doe', 'verification_value': '154', 'month': 12}
+ming= "https://yeezysupply.com/cart/add.js"
+mingB= "https://yeezysupply.com/cart/"
+ing0= "https://yeezysupply.com"
+ing1= "https://yeezysupply.com/collections/"
+ing2= soupfinder(ing0, "script", '[a-z]+1')[0]
+mix0= ing1 + ing2
+ing3= soupfinder(mix0, "a", '/products/[a-z0-9]+')[0]
+mix1= ing0+ing3
+#Gettingthecart
+ing4= soupfinder(mix1, "script", '\d{11},')
+ing5= []
+for id in ing4:
+   if id != ing4[0]:
+        ing5.append(id[:11])
+		
+gotocheckout["id"]= ing5[0]
+ing6= ses.post(ming, json =gotocheckout)
+ing7= ses.get(mingB, params={"addProduct": "true"}, allow_redirects= True)
+ing8 = ses.post(mingB, json= {"updates[]": "1", "checkout": "CHECK+OUT"}, allow_redirects= False)
+ing9= soupmakerlite(ing8,"a")
+ing1B= re.split(r'"*', ing9)[1]
+ing2B= ses.get(ing1B)
+#Checkoutprocess
+testingdictionary["authenticity_token"]= ALTsoupfinder(ing2B)
+ing3B= ses.post(ing1B, data= testingdictionary)
+#needs revisiting.
+ing4B= ses.get(ing1B, params= {"previous_step": "contact_information", "step": "shipping_method"})
+confirmingdictionary["authenticity_token"]= ALTsoupfinder(ing4B)
+ing5B= ses.post(ing1B, data= confirmingdictionary)
+ing6B= ses.get(ing1B, params= {"previous_step": "shipping_method", "step": "payment_method"})
+thelastdict["authenticity_token"]= ALTsoupfinder(ing6B)
+thelastdict["checkout[payment_gateway]"]= re.split('"', str(regexfinder('value="\d{9}"', str(ing6B.content))))[1]
+ing7B= ses.options("https://elb.deposit.shopifycs.com/sessions")
+ing8B= ses.post("https://elb.deposit.shopifycs.com/sessions", json= creditinfo)
+thelastdict["s"]= re.split('"', str(ing8B.content))[3]
+ing9B= ses.post(ing1B, data= thelastdict)
+preppedorder= ses.get(ing1B + "/processing")
+print ing9B.status_code, preppedorder.status_code
