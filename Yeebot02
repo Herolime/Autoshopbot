@@ -1,0 +1,106 @@
+#modules needed for the bot
+import requests
+from bs4 import BeautifulSoup as soup
+import re
+#functions
+def soupmaker(url, tags):
+    r= requests.get(url)
+    s= soup(r.content, 'html.parser')
+    t= str(s.find_all(tags))
+    return t
+	
+def soupmakercart(ing, tags):
+    s= soup(ing.content, 'html.parser')
+    t= str(s.find_all(tags))
+    return t
+
+def regexfinder(parameter, string):
+    search= (re.findall('%s' %(parameter), string))
+    return search
+
+def soupfinder(url, tags, parameter):
+   s= soupmaker(url, tags)
+   bla= regexfinder(parameter, s)
+   return bla
+	 
+def soupfindercheckout(ing):
+   s= soupmakercart(ing, "input")
+   bla= (regexfinder('value="\S{60,}"', s))
+   if len(bla) != 3:
+    splitup=re.split('"', bla[4])
+    return splitup[1]	
+   else:
+    splitup= re.split('"', bla[2])
+    return splitup[1]
+	
+
+
+    
+
+#needed variables
+ses= requests.Session()
+testingdictionary= {'checkout[shipping_address][phone]': '646-667-6061', 'checkout[shipping_address][province]': 'New+York', 
+'checkout[shipping_address][first_name]': 'Kelli', 'checkout[shipping_address][last_name]': 'Fultz', 'utf8': '%E2%9C%93', 
+'authenticity_token': '', 'checkout[shipping_address][zip]': '10013', 'checkout[shipping_address][city]': 'New+York', 
+"checkout[shipping_address][province]": 'New+York', 'checkout[shipping_address][country]': 'United+States', 
+'checkout[email]': 'Kelli@outlook.com', 'checkout[remember_me]': '0', 'step': 'contact_information', 
+'previous_step': 'contact_information', 'checkout[shipping_address][address1]': '2666+Cantebury+Drive', 
+'checkout[shipping_address][address2]': '', '_method': 'patch', 'button': ''}
+confirmingdictionary= {"utf8": testingdictionary["utf8"], "_method": "patch", "authenticity_token": "", "previous_step": "shipping_method", 
+"step": "payment_method", "checkout[shipping_rate][id]":"shopify-STANDARD%20SHIPPING-20.00","button": ""}
+redirectdictionary= {"utf8": testingdictionary["utf8"], "_method": "patch", "authenticity_token": "", "previous_step": "payment_method", 
+"step": "", "checkout[payment_gateway]" :"","button": "", "checkout[different_billing_address]": "false", 
+"checkout[buyer_accepts_marketing]":"0", "complete": "1","s": "", "hosted_fields_redirect": "1", "checkout[billing_address][first_name]": "",
+"checkout[billing_address][last_name]": "", "checkout[billing_address][address1]": "", "checkout[billing_address][address2]": "", "checkout[billing_address][city]": "",
+"checkout[billing_address][country}": "United+States", "checkout[billing_address][province]": "", "checkout[billing_address][zip]": "", "checkout[billing_address][phone]":""}
+creditinfo= {'year': 2018, 'number': '5105 1051 0510 5100', 'name': 'John Doe', 'verification_value': '154', 'month': 12}
+gotocheckout = {"quantity": "1", "id": None}
+mingA= 'https://yeezysupply.com/cart/add.js'
+mingB= 'https://yeezysupply.com/cart/'
+mingC= 'https://yeezysupply.com'
+mingD= 'https://yeezysupply.com/pages/footwear' 
+#getting the item
+item0= soupfinder(mingD, "a", '/products/\S+/footwear')
+#print item0
+#asking0 = raw_input('you choose the link(list item):')
+mix0= mingC + item0[4]
+item1={"size1": "","available1": "", "available2": "","size2": "","available2": "", "size3": "","available3": "", "size4": "","available4": "", "size5": "", 
+"available5": "", "size6": "","available6": "", "size7": "","available7": "", "size8": "", "available8": "", "size9": "","available9": "", "size10": "","available10": "", 
+"size11": "","available11": "", "size12": "","available12": "", "size13": "","available13": "", "size14": "","available14": "", "size15": "","available15": "",
+"size16": "","available16": "", "size17": "", "available17": ""}
+item2= soupfinder(mix0, "script", '\d{11},')
+item2B= soupfinder(mix0, 'script', 'available\s*:\s*[aeflrstu]{4,5},')
+item2C=regexfinder('[aeflrstu]{4,5}', str(item2B))
+#print requests.get(mix0).content
+i = 0
+dictcount= 1
+while i < 8:
+    item1["size%s"%(dictcount)]=item2[i][:11]
+    item1["available%s"%(dictcount)] = item2C[i]
+    #print item1["size%s"%(dictcount)]
+    #print item1["available%s"%(dictcount)]
+    i+=1
+    dictcount+=1
+#asking1= raw_input('choose size(dictionary key)')
+#gotocheckout['id'] = item1['size%s'%(asking1)]
+gotocheckout['id']= item1['size3']
+#Gettingthecart
+cart0= ses.post(mingA, json =gotocheckout)
+cart1= ses.get(mingB, params={"addProduct": "true"}, allow_redirects= True)
+cart2 = ses.post(mingB, json= {"updates[]": "1", "checkout": "CHECK+OUT"}, allow_redirects= False)
+cart3= soupmakercart(cart2,"a")
+cart4= re.split(r'"*', cart3)[1]
+cart5= ses.get(cart4)
+#checkout
+testingdictionary["authenticity_token"]= soupfindercheckout(cart5)
+check0=ses.post(cart4, data= testingdictionary) 
+#testingdictionary["authenticity_token"] = ALTsoupfinder(ing3B)
+#needs revision, don't understand why the shipping info doesn't go through check 0 through check1
+check1= ses.get(cart4, params={"previous_step": "contact_information", "step": "shipping_method"})
+confirmingdictionary['authenticity_token']= soupfindercheckout(check1)
+check2= ses.post(cart4, data= confirmingdictionary)
+check3= ses.get(cart4, params= {"previous_step": "shipping_method", "step": "payment_method"})
+redirectdictionary["authenticity_token"]= soupfindercheckout(check2)
+redirectdictionary["checkout[payment_gateway]"]= re.split('"', str(regexfinder('value="\d{9}"', str(check3.content))))[1]
+check4= ses.post(cart4, data= redirectdictionary)
+check5= ses.get(cart4 + "/hosted_fields_forward")
